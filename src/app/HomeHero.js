@@ -84,22 +84,21 @@ export default function HomeHero() {
   };
 
   const quickLinks = [
-    { label: "Dog Food", type: "products", purpose: "nutrition", species: "dog" },
-    { label: "Cat Food", type: "products", purpose: "nutrition", species: "cat" },
-    { label: "Livestock Feed", type: "products", purpose: "farm_use", species: "livestock" },
+    { label: "Dog Food", type: "products", category: "dog-food" },
+    { label: "Cat Food", type: "products", category: "cat-food" },
+    { label: "Livestock Feed", type: "products", category: "livestock-feed" },
     { label: "Puppies", type: "animals", species: "dog" },
     { label: "Kittens", type: "animals", species: "cat" }
   ];
 
   const handleQuickLink = (link) => {
     const qs = new URLSearchParams();
-    if (link.species) qs.set("species", link.species);
-    if (link.purpose) qs.set("purpose", link.purpose);
+    if (link.category) qs.set('category', link.category);
+    if (link.species) qs.set('species', link.species);
     const params = qs.toString();
     const pushPath = `/shop/${link.type}${params ? `?${params}` : ''}`;
-    // navigate immediately
     router.push(pushPath);
-    // fire-and-forget prefetch to warm cache (do not block navigation)
+    // warm cache
     const url = `/${link.type === 'products' ? 'products' : 'animals'}${params ? `?${params}` : ''}`;
     api.get(url).catch(() => null);
   };

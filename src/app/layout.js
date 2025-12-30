@@ -16,6 +16,9 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "OKPUPS",
   description: "OKPUPS pet store",
+  icons: {
+    icon: "https://res.cloudinary.com/dzifobwnx/image/upload/v1766686429/ChatGPT_Image_Dec_25__2025__06_32_34_PM-removebg-preview_xeevlc.png"
+  }
 };
 
 export default function RootLayout({ children }) {
