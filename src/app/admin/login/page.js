@@ -14,12 +14,16 @@ export default function AdminLogin() {
     setError(null);
     try {
       if (!email || !password) return setError("Enter email and password");
-      const res = await fetch((process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000") + "/auth/login", {
+      const res = await fetch(
+        (process.env.NEXT_PUBLIC_API_BASE_URL || "https://okpupsbackend-7gv3.onrender.com") +
+          "/auth/login",
+        {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })
-      });
+        }
+      );
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data?.message || "Login failed");

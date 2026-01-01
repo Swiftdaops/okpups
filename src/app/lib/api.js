@@ -1,4 +1,4 @@
-const DEFAULT_BASE = "http://localhost:5000";
+const DEFAULT_BASE = "https://okpupsbackend-7gv3.onrender.com";
 
 export function apiBase() {
   return (process.env.NEXT_PUBLIC_API_BASE_URL || DEFAULT_BASE).replace(/\/$/, "");
