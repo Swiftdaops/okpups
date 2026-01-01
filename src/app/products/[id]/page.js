@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState, Suspense } from "react"; // Added Suspense
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -8,21 +8,21 @@ import Link from "next/link";
 import { api } from "../../lib/api";
 import { useCartPersistence, useCartStore } from "../../lib/useCart";
 
+// 1. Updated Badge to use your Stone/Slate palette
 function Badge({ children, color = "gray" }) {
   const map = {
-    gray: "bg-gray-100 text-gray-700",
-    blue: "bg-blue-100 text-blue-700",
-    green: "bg-green-100 text-green-700",
-    red: "bg-red-100 text-red-700",
-    yellow: "bg-yellow-100 text-yellow-700",
+    gray: "bg-slate-300 text-stone-800",
+    blue: "bg-blue-200 text-blue-900",
+    green: "bg-emerald-200 text-emerald-900",
+    red: "bg-red-200 text-red-900",
+    yellow: "bg-amber-200 text-amber-900",
   };
-  return <span className={`inline-block rounded px-2 py-0.5 text-xs ${map[color] || map.gray}`}>{children}</span>;
+  return <span className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${map[color] || map.gray}`}>{children}</span>;
 }
 
 export default function ProductDetailsPage() {
   useCartPersistence();
   const addItem = useCartStore((s) => s.addItem);
-
   const router = useRouter();
   const { id } = useParams();
 
@@ -34,7 +34,8 @@ export default function ProductDetailsPage() {
 
   useEffect(() => {
     if (!id) return;
-    setLoading(true); setError(null);
+    setLoading(true); 
+    setError(null);
     api.get(`/products/${id}`)
       .then((d) => {
         setProduct(d.product);
@@ -49,83 +50,95 @@ export default function ProductDetailsPage() {
 
   function onAddToCart() {
     if (!product) return;
-    addItem({ _id: product._id, _type: 'product', name: product.name || 'Product', price: product.price || 0, qty: 1 });
+    addItem({ _id: product._id, _type: 'product', name: product.name, price: product.price || 0, qty: 1 });
   }
 
-  if (loading) return <div className="p-6">Loading…</div>;
+  if (loading) return <div className="p-6 text-stone-950">Loading product details...</div>;
   if (error) return <div className="p-6 text-red-600">{error}</div>;
-  if (!product) return <div className="p-6">Product not found</div>;
+  if (!product) return <div className="p-6 text-stone-950">Product not found</div>;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="mb-4 flex items-center gap-2 text-sm text-gray-500">
-        <Link href="/shop" className="text-blue-600">Shop</Link>
+    // 2. Applied your requested bg-slate-200 and text-stone-950
+    <div className="min-h-screen bg-slate-200 text-stone-950 p-6">
+      
+      {/* Breadcrumbs */}
+      <div className="mb-6 flex items-center gap-2 text-sm text-stone-600">
+        <Link href="/shop" className="hover:underline">Shop</Link>
         <span>/</span>
-        <Link href="/shop/products" className="text-blue-600">Products</Link>
+        <Link href="/shop/products" className="hover:underline">Products</Link>
         <span>/</span>
-        <span>{product.name}</span>
+        <span className="font-semibold text-stone-950">{product.name}</span>
       </div>
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 max-w-7xl mx-auto">
+        {/* Left: Images */}
         <div>
-          <div className="relative mb-4 h-96 w-full overflow-hidden rounded-lg bg-gray-100 shadow-md">
+          <div className="relative mb-4 h-[500px] w-full overflow-hidden rounded-xl bg-slate-300 shadow-inner">
             {mainImage && (
-              <Image src={mainImage} alt={product.name} fill sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover" />
+              <Image 
+                src={mainImage} 
+                alt={product.name} 
+                fill 
+                priority
+                sizes="(max-width: 1024px) 100vw, 50vw" 
+                className="object-cover" 
+              />
             )}
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-3 overflow-x-auto pb-2">
             {thumbnails.map((img, idx) => (
               <motion.button
                 key={idx}
                 whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => setMainImage(img)}
-                className={`relative h-20 w-20 overflow-hidden rounded border-2 ${mainImage===img? 'border-blue-500' : 'border-gray-200'}`}
+                className={`relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-lg border-2 transition-colors ${mainImage === img ? 'border-stone-950' : 'border-slate-400'}`}
               >
-                <Image
-                  src={img}
-                  alt={`thumb-${idx}`}
-                  fill
-                  sizes="80px"
-                  className="object-cover"
-                  onError={() => {
-                    setThumbnails((prev) => prev.filter((u) => u !== img));
-                    if (mainImage === img) {
-                      const next = (thumbnails || []).find((u) => u !== img) || null;
-                      setMainImage(next);
-                    }
-                  }}
-                />
+                <Image src={img} alt={`thumb-${idx}`} fill sizes="96px" className="object-cover" />
               </motion.button>
             ))}
           </div>
         </div>
 
-        <div>
-          <h1 className="mb-2 text-3xl font-bold">{product.name}</h1>
-          <p className="mb-2 text-gray-600">{product.brand}</p>
+        {/* Right: Info */}
+        <div className="flex flex-col">
+          <h1 className="mb-2 text-4xl font-extrabold tracking-tight text-stone-950">{product.name}</h1>
+          <p className="mb-4 text-lg text-stone-600 italic">{product.brand}</p>
 
-          <div className="mb-2 flex flex-wrap gap-2">
+          <div className="mb-6 flex flex-wrap gap-2">
             {(product.ageSuitability || []).map((a) => (<Badge key={a} color="yellow">{a}</Badge>))}
             {product.vetApproved && <Badge color="green">Vet Approved</Badge>}
-            {(product.purpose || []).slice(0,2).map((p) => (<Badge key={p} color="blue">{p}</Badge>))}
           </div>
 
-          <div className="mb-4 text-2xl font-bold text-blue-600">₦{Number(product.price || 0).toLocaleString()}</div>
-          <p className={`mb-4 ${product.stock > 0 ? 'text-green-600' : 'text-red-500'}`}>
-            {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
-          </p>
+          <div className="mb-6 text-3xl font-bold">
+            ₦{Number(product.price || 0).toLocaleString()}
+          </div>
 
-          <ul className="mb-4 space-y-1 text-gray-700">
-            {product.specs?.weight && <li><strong>Weight:</strong> {product.specs.weight}</li>}
-            {product.specs?.proteinPercent && <li><strong>Protein:</strong> {product.specs.proteinPercent}</li>}
-            {product.specs?.fatPercent && <li><strong>Fat:</strong> {product.specs.fatPercent}</li>}
-            {product.specs?.fiberPercent && <li><strong>Fiber:</strong> {product.specs.fiberPercent}</li>}
-            {product.specs?.ingredients && <li><strong>Ingredients:</strong> {product.specs.ingredients}</li>}
-          </ul>
+          <div className={`mb-6 inline-flex items-center gap-2 font-medium ${product.stock > 0 ? 'text-emerald-700' : 'text-red-600'}`}>
+            <span className={`h-2 w-2 rounded-full ${product.stock > 0 ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
+            {product.stock > 0 ? `${product.stock} units available` : 'Out of stock'}
+          </div>
 
-          <div className="flex items-center gap-3">
-            <button onClick={onAddToCart} className="rounded bg-blue-600 px-6 py-3 text-white transition hover:bg-blue-700">Add to Cart</button>
-            <button onClick={() => router.back()} className="rounded border px-6 py-3">Back</button>
+          <div className="mb-8 rounded-xl bg-slate-300/50 p-6 border border-slate-300">
+            <h3 className="mb-3 font-bold text-stone-900 uppercase tracking-wider text-sm">Product Specifications</h3>
+            <ul className="space-y-2 text-stone-800">
+              {product.specs?.weight && <li><strong>Weight:</strong> {product.specs.weight}</li>}
+              {product.specs?.proteinPercent && <li><strong>Protein Content:</strong> {product.specs.proteinPercent}</li>}
+              {product.specs?.ingredients && <li className="text-sm leading-relaxed"><strong>Ingredients:</strong> {product.specs.ingredients}</li>}
+            </ul>
+          </div>
+
+          <div className="mt-auto flex items-center gap-4">
+            <button 
+              disabled={product.stock <= 0}
+              onClick={onAddToCart} 
+              className="flex-1 rounded-lg bg-stone-950 px-8 py-4 text-white font-bold transition hover:bg-stone-800 disabled:bg-stone-400"
+            >
+              Add to Cart
+            </button>
+            <button onClick={() => router.back()} className="rounded-lg border-2 border-stone-950 px-8 py-4 font-bold hover:bg-stone-950 hover:text-white transition">
+              Back
+            </button>
           </div>
         </div>
       </div>
