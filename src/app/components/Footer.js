@@ -80,11 +80,7 @@ export default function Footer() {
                 About OKPUPS
               </Link>
             </li>
-            <li>
-              <Link href="/contact" className="hover:text-white">
-                Contact Support
-              </Link>
-            </li>
+            {/* Contact page removed: use support channels externally if needed */}
           </ul>
         </div>
       </div>
