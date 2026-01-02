@@ -15,17 +15,28 @@ export default function AdminAnimalsPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [searchDraft, setSearchDraft] = useState("");
   const [search, setSearch] = useState("");
+  const [categories, setCategories] = useState([]);
+  const [categoryIdDraft, setCategoryIdDraft] = useState("");
+  const [categoryId, setCategoryId] = useState("");
 
   useEffect(() => {
     if (loading) return;
-    load({ q: search });
+    load({ q: search, categoryId });
   }, [loading]);
 
-  async function load({ q } = {}) {
+  useEffect(() => {
+    api
+      .get("/categories")
+      .then((d) => setCategories((d.categories || []).filter((c) => c?.type !== "product")))
+      .catch(() => setCategories([]));
+  }, []);
+
+  async function load({ q, categoryId: categoryIdArg } = {}) {
     setError(null);
     try {
       const params = new URLSearchParams();
       if (q && String(q).trim()) params.set("q", String(q).trim());
+      if (categoryIdArg && String(categoryIdArg).trim()) params.set("categoryId", String(categoryIdArg).trim());
       const path = params.toString() ? `/animals/admin/list?${params.toString()}` : "/animals/admin/list";
       const d = await api.get(path);
       setAnimals(d.animals || []);
@@ -36,8 +47,10 @@ export default function AdminAnimalsPage() {
 
   async function onSearch() {
     const q = String(searchDraft || "").trim();
+    const nextCategoryId = String(categoryIdDraft || "").trim();
     setSearch(q);
-    await load({ q });
+    setCategoryId(nextCategoryId);
+    await load({ q, categoryId: nextCategoryId });
   }
 
   function handleCreated(a) {
@@ -75,6 +88,18 @@ export default function AdminAnimalsPage() {
 
       {showFilters && (
         <div className="mb-4 flex flex-wrap items-center gap-2 rounded border p-3">
+          <select
+            className="w-full max-w-xs rounded border px-3 py-2"
+            value={categoryIdDraft}
+            onChange={(e) => setCategoryIdDraft(e.target.value)}
+          >
+            <option value="">All categories</option>
+            {categories.map((c) => (
+              <option key={c._id} value={c._id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
           <input
             className="w-full max-w-md rounded border px-3 py-2"
             placeholder="Search animals..."
@@ -100,7 +125,7 @@ export default function AdminAnimalsPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   {img && (
-                    <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded bg-gray-100">
+                    <div className="h-24 w-24 shrink-0 overflow-hidden rounded bg-gray-100">
                       <img src={img} alt={a.name || a.nameOrTag} className="h-full w-full object-cover" />
                     </div>
                   )}

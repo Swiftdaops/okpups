@@ -5,8 +5,20 @@ import { api, apiForm } from "../lib/api";
 
 export default function EditAnimal({ animal, onUpdated, onDeleted, onCancel }) {
   const [categories, setCategories] = useState([]);
+  const initialCategoryId =
+    animal && typeof animal.categoryId === 'object' && animal.categoryId && animal.categoryId._id
+      ? String(animal.categoryId._id)
+      : String(animal?.categoryId || '');
+  const initialPurpose = Array.isArray(animal?.purpose)
+    ? animal.purpose
+    : typeof animal?.purpose === 'string'
+      ? animal.purpose.split(',').map((s) => s.trim()).filter(Boolean)
+      : ['companion'];
+  const initialTemperament = Array.isArray(animal?.temperament)
+    ? animal.temperament.join(',')
+    : String(animal?.temperament || '');
   const [form, setForm] = useState(() => ({
-    categoryId: animal.categoryId || "",
+    categoryId: initialCategoryId,
     name: animal.name || animal.nameOrTag || "",
     species: animal.species || "",
     breed: animal.breed || "",
@@ -14,14 +26,14 @@ export default function EditAnimal({ animal, onUpdated, onDeleted, onCancel }) {
     sex: animal.sex || "unknown",
     price: animal.price || 0,
     quantityAvailable: animal.quantityAvailable || 1,
-    purpose: animal.purpose || ["companion"],
-    temperament: (animal.temperament || []).join(','),
+    purpose: initialPurpose,
+    temperament: initialTemperament,
     experienceLevel: animal.experienceLevel || 'beginner',
     livingSpace: animal.livingSpace || 'apartment',
     expectedAdultSize: animal.expectedAdultSize || 'medium',
     availabilityStatus: animal.availabilityStatus || 'available',
     location: animal.location || '',
-    isActive: animal.isActive,
+    isActive: typeof animal.isActive === 'boolean' ? animal.isActive : true,
   }));
   const [images, setImages] = useState([]);
   const [previewImages, setPreviewImages] = useState(() => (animal.images || []).slice());
@@ -49,6 +61,15 @@ export default function EditAnimal({ animal, onUpdated, onDeleted, onCancel }) {
       const fd = new FormData();
       // ensure temperament string -> array
       const payload = { ...form };
+      if (payload && typeof payload.categoryId === 'object' && payload.categoryId && payload.categoryId._id) {
+        payload.categoryId = String(payload.categoryId._id);
+      }
+      if (typeof payload.purpose === 'string') {
+        payload.purpose = payload.purpose
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean);
+      }
       if (typeof payload.temperament === 'string') {
         payload.temperament = payload.temperament
           .split(',')
