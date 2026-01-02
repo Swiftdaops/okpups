@@ -12,20 +12,32 @@ export default function AdminAnimalsPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [editing, setEditing] = useState(null);
   const [error, setError] = useState(null);
+  const [showFilters, setShowFilters] = useState(false);
+  const [searchDraft, setSearchDraft] = useState("");
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     if (loading) return;
-    load();
+    load({ q: search });
   }, [loading]);
 
-  async function load() {
+  async function load({ q } = {}) {
     setError(null);
     try {
-      const d = await api.get("/animals/admin/list");
+      const params = new URLSearchParams();
+      if (q && String(q).trim()) params.set("q", String(q).trim());
+      const path = params.toString() ? `/animals/admin/list?${params.toString()}` : "/animals/admin/list";
+      const d = await api.get(path);
       setAnimals(d.animals || []);
     } catch (e) {
       setError(e.message || "Failed to load");
     }
+  }
+
+  async function onSearch() {
+    const q = String(searchDraft || "").trim();
+    setSearch(q);
+    await load({ q });
   }
 
   function handleCreated(a) {
@@ -50,11 +62,33 @@ export default function AdminAnimalsPage() {
     <div className="mx-auto max-w-6xl p-6">
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-xl font-semibold">Animals</h1>
-        <button className="rounded bg-black px-3 py-2 text-white" onClick={() => setShowAdd((v) => !v)}>
-          {showAdd ? "Close" : "Add New Animal"}
-        </button>
+        <div className="flex items-center gap-2">
+          <button className="rounded border px-3 py-2" onClick={() => setShowFilters((v) => !v)}>
+            Filter
+          </button>
+          <button className="rounded bg-black px-3 py-2 text-white" onClick={() => setShowAdd((v) => !v)}>
+            {showAdd ? "Close" : "Add New Animal"}
+          </button>
+        </div>
       </div>
       {error && <div className="mb-2 text-sm text-red-600">{error}</div>}
+
+      {showFilters && (
+        <div className="mb-4 flex flex-wrap items-center gap-2 rounded border p-3">
+          <input
+            className="w-full max-w-md rounded border px-3 py-2"
+            placeholder="Search animals..."
+            value={searchDraft}
+            onChange={(e) => setSearchDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") onSearch();
+            }}
+          />
+          <button className="rounded bg-black px-3 py-2 text-white" onClick={onSearch}>
+            Search
+          </button>
+        </div>
+      )}
 
       {showAdd && <AddAnimal onCreated={handleCreated} onCancel={() => setShowAdd(false)} />}
 
