@@ -1,15 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { api } from "./api";
+import { usePathname, useRouter } from "next/navigation";
+import { api, clearAuthToken } from "./api";
 
 export function useRequireAdmin() {
   const router = useRouter();
+  const pathname = usePathname();
   const [admin, setAdmin] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (pathname === "/admin/login") {
+      setLoading(false);
+      return;
+    }
     let alive = true;
     (async () => {
       try {
@@ -18,6 +23,7 @@ export function useRequireAdmin() {
         setAdmin(data.admin);
       } catch (e) {
         if (!alive) return;
+        if (e?.status === 401) clearAuthToken();
         router.replace("/admin/login");
       } finally {
         if (!alive) return;
@@ -27,7 +33,7 @@ export function useRequireAdmin() {
     return () => {
       alive = false;
     };
-  }, [router]);
+  }, [router, pathname]);
 
   async function reloadAdmin() {
     try {

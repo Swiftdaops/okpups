@@ -2,14 +2,20 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Menu } from "lucide-react";
 import { useRequireAdmin } from "../lib/useRequireAdmin";
 import { apiForm } from "../lib/api";
 
 export default function AdminShell({ onLogout }) {
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const { admin, reloadAdmin } = useRequireAdmin();
   let fileInputRef;
+
+  // The login page lives under /admin/* and shares the same layout.
+  // Avoid mounting the admin shell (and its auth checks) on /admin/login.
+  if (pathname === "/admin/login") return null;
 
   async function handleFileChange(e) {
     const file = e.target.files?.[0];

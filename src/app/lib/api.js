@@ -5,6 +5,36 @@ export function apiBase() {
   return (process.env.NEXT_PUBLIC_API_BASE_URL || DEFAULT_BASE).replace(/\/$/, "");
 }
 
+const TOKEN_STORAGE_KEY = "okpups_admin_token";
+
+export function getAuthToken() {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.localStorage.getItem(TOKEN_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function setAuthToken(token) {
+  if (typeof window === "undefined") return;
+  try {
+    if (!token) return;
+    window.localStorage.setItem(TOKEN_STORAGE_KEY, token);
+  } catch {
+    // ignore
+  }
+}
+
+export function clearAuthToken() {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem(TOKEN_STORAGE_KEY);
+  } catch {
+    // ignore
+  }
+}
+
 function normalizePath(path) {
   if (!path) return "";
   return path.startsWith("/") ? path : `/${path}`;
@@ -12,11 +42,13 @@ function normalizePath(path) {
 
 async function request(path, { method = "GET", body, headers } = {}) {
   const url = `${apiBase()}${normalizePath(path)}`;
+  const token = getAuthToken();
   const res = await fetch(url, {
     method,
     credentials: "include",
     headers: {
       ...(body ? { "Content-Type": "application/json" } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(headers || {}),
     },
     body: body ? JSON.stringify(body) : undefined,
