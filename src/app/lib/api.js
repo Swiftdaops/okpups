@@ -1,11 +1,17 @@
+// Override via NEXT_PUBLIC_API_BASE_URL (e.g. .env.local) when needed.
 const DEFAULT_BASE = "https://okpupsbackend-7gv3.onrender.com";
 
 export function apiBase() {
   return (process.env.NEXT_PUBLIC_API_BASE_URL || DEFAULT_BASE).replace(/\/$/, "");
 }
 
+function normalizePath(path) {
+  if (!path) return "";
+  return path.startsWith("/") ? path : `/${path}`;
+}
+
 async function request(path, { method = "GET", body, headers } = {}) {
-  const url = `${apiBase()}${path}`;
+  const url = `${apiBase()}${normalizePath(path)}`;
   const res = await fetch(url, {
     method,
     credentials: "include",
@@ -46,7 +52,7 @@ export const api = {
 };
 
 export async function apiForm(path, formData, method = "POST") {
-  const url = `${apiBase()}${path}`;
+  const url = `${apiBase()}${normalizePath(path)}`;
   const res = await fetch(url, {
     method,
     credentials: "include",
