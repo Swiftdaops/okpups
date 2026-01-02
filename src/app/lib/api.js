@@ -85,9 +85,13 @@ export const api = {
 
 export async function apiForm(path, formData, method = "POST") {
   const url = `${apiBase()}${normalizePath(path)}`;
+  const token = getAuthToken();
   const res = await fetch(url, {
     method,
     credentials: "include",
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     body: formData,
   });
   const text = await res.text();

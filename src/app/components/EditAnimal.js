@@ -101,7 +101,11 @@ export default function EditAnimal({ animal, onUpdated, onDeleted, onCancel }) {
       const data = await apiForm(`/animals/admin/${animal._id}`, fd, "PATCH");
       onUpdated?.(data.animal);
     } catch (e) {
-      setError(e.message || "Failed to update");
+      const details =
+        e?.data?.issues && Array.isArray(e.data.issues) && e.data.issues.length
+          ? `${e.data.issues[0].path?.join('.') || 'field'}: ${e.data.issues[0].message}`
+          : null;
+      setError(details || e.message || "Failed to update");
     } finally {
       setBusy(false);
     }
