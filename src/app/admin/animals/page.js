@@ -76,7 +76,11 @@ export default function AdminAnimalsPage() {
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-xl font-semibold">Animals</h1>
         <div className="flex items-center gap-2">
-          <button className="rounded border px-3 py-2" onClick={() => setShowFilters((v) => !v)}>
+          <button
+            type="button"
+            className="rounded border bg-white px-3 py-2 text-black hover:bg-gray-50"
+            onClick={() => setShowFilters((v) => !v)}
+          >
             Filter
           </button>
           <button className="rounded bg-black px-3 py-2 text-white" onClick={() => setShowAdd((v) => !v)}>
