@@ -59,6 +59,7 @@ export default function EditAnimal({ animal, onUpdated, onDeleted, onCancel }) {
     setBusy(true);
     try {
       const fd = new FormData();
+      const arrayFieldName = (k) => (k === "purpose" || k === "temperament" || k === "vaccinations" ? `${k}[]` : k);
       // ensure temperament string -> array
       const payload = { ...form };
       if (payload && typeof payload.categoryId === 'object' && payload.categoryId && payload.categoryId._id) {
@@ -81,7 +82,7 @@ export default function EditAnimal({ animal, onUpdated, onDeleted, onCancel }) {
         if (v === null || typeof v === 'undefined') continue;
         if (Array.isArray(v)) {
           if (!v.length) continue;
-          v.forEach((it) => fd.append(k, String(it)));
+          v.forEach((it) => fd.append(arrayFieldName(k), String(it)));
           continue;
         }
         if (typeof v === 'string') {

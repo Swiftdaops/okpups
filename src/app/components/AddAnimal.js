@@ -39,9 +39,10 @@ export default function AddAnimal({ onCreated, onCancel }) {
     setBusy(true);
     try {
       const fd = new FormData();
+      const arrayFieldName = (k) => (k === "purpose" || k === "temperament" || k === "vaccinations" ? `${k}[]` : k);
       // append arrays and comma-separated fields properly
       Object.entries(form).forEach(([k, v]) => {
-        if (Array.isArray(v)) v.forEach((it) => fd.append(k, it));
+        if (Array.isArray(v)) v.forEach((it) => fd.append(arrayFieldName(k), it));
         else fd.append(k, String(v ?? ''));
       });
       images.forEach((file) => fd.append("images", file));
