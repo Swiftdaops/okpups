@@ -22,13 +22,23 @@ export default function AddAnimal({ onCreated, onCancel }) {
     availabilityStatus: "available",
     location: ""
   });
-  const [images, setImages] = useState([]);
+  const [images, setImages] = useState([]); // [{ file, url }]
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     api.get("/categories").then((d) => setCategories(d.categories || [])).catch(() => setCategories([]));
   }, []);
+
+  useEffect(() => {
+    return () => {
+      (images || []).forEach((it) => {
+        try {
+          if (it?.url && it.url.startsWith('blob:')) URL.revokeObjectURL(it.url);
+        } catch (e) {}
+      });
+    };
+  }, [images]);
 
   function update(k, v) {
     setForm((f) => ({ ...f, [k]: v }));
@@ -45,7 +55,7 @@ export default function AddAnimal({ onCreated, onCancel }) {
         if (Array.isArray(v)) v.forEach((it) => fd.append(arrayFieldName(k), it));
         else fd.append(k, String(v ?? ''));
       });
-      images.forEach((file) => fd.append("images", file));
+      (images || []).forEach((it) => fd.append("images", it.file));
       const data = await apiForm("/animals/admin", fd, "POST");
       onCreated?.(data.animal);
     } catch (e) {
@@ -176,8 +186,50 @@ export default function AddAnimal({ onCreated, onCancel }) {
       <div className="mt-2">
         <label className="flex flex-col gap-1 text-sm">
           <span>Images (max 6)</span>
-          <input type="file" multiple accept="image/*" onChange={(e) => setImages(Array.from(e.target.files || []))} />
+          <input
+            type="file"
+            multiple
+            accept="image/*"
+            onChange={(e) => {
+              // replace selection
+              (images || []).forEach((it) => {
+                try {
+                  if (it?.url && it.url.startsWith('blob:')) URL.revokeObjectURL(it.url);
+                } catch (err) {}
+              });
+              const files = Array.from(e.target.files || []);
+              setImages(files.map((file) => ({ file, url: URL.createObjectURL(file) })));
+            }}
+          />
         </label>
+
+        {images && images.length > 0 && (
+          <div className="mt-2">
+            <div className="flex gap-2 flex-wrap">
+              {images.map((it, i) => (
+                <div key={it.url || i} className="relative h-16 w-16 overflow-hidden rounded bg-gray-100">
+                  <img src={it.url} alt={`new-${i}`} className="h-full w-full object-cover" />
+                  <button
+                    type="button"
+                    aria-label="Remove image"
+                    className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded bg-black/70 text-white"
+                    onClick={() => {
+                      setImages((cur) => {
+                        const next = (cur || []).filter((x) => x.url !== it.url);
+                        try {
+                          if (it?.url && it.url.startsWith('blob:')) URL.revokeObjectURL(it.url);
+                        } catch (e) {}
+                        return next;
+                      });
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="mt-3 flex gap-2">

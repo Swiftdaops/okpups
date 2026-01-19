@@ -35,8 +35,8 @@ export default function EditAnimal({ animal, onUpdated, onDeleted, onCancel }) {
     location: animal.location || '',
     isActive: typeof animal.isActive === 'boolean' ? animal.isActive : true,
   }));
-  const [images, setImages] = useState([]);
-  const [previewImages, setPreviewImages] = useState(() => (animal.images || []).slice());
+  const [images, setImages] = useState([]); // [{ file, url }]
+  const [previewImages, setPreviewImages] = useState(() => (animal.images || []).map((url) => ({ url, kind: 'existing' })));
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
 
@@ -46,7 +46,11 @@ export default function EditAnimal({ animal, onUpdated, onDeleted, onCancel }) {
 
   useEffect(() => {
     return () => {
-      (previewImages || []).forEach((u) => { try { if (u && u.startsWith('blob:')) URL.revokeObjectURL(u); } catch (e) {} });
+      (previewImages || []).forEach((it) => {
+        try {
+          if (it?.kind === 'new' && it?.url && it.url.startsWith('blob:')) URL.revokeObjectURL(it.url);
+        } catch (e) {}
+      });
     };
   }, [previewImages]);
 
@@ -98,7 +102,7 @@ export default function EditAnimal({ animal, onUpdated, onDeleted, onCancel }) {
         // objects (nested) -> JSON
         fd.append(k, JSON.stringify(v));
       }
-      images.forEach((file) => fd.append("images", file));
+      (images || []).forEach((it) => fd.append("images", it.file));
       const data = await apiForm(`/animals/admin/${animal._id}`, fd, "PATCH");
       onUpdated?.(data.animal);
     } catch (e) {
@@ -202,12 +206,28 @@ export default function EditAnimal({ animal, onUpdated, onDeleted, onCancel }) {
         {previewImages && previewImages.length > 0 && (
           <div className="mt-2">
             <div className="mb-2">
-              <img src={previewImages[0]} alt="primary" className="h-40 w-40 rounded object-cover" />
+              <img src={previewImages[0].url} alt="primary" className="h-40 w-40 rounded object-cover" />
             </div>
             <div className="flex gap-2">
-              {previewImages.map((u, i) => (
-                <div key={i} className="h-16 w-16 overflow-hidden rounded bg-gray-100">
-                  <img src={u} alt={`img-${i}`} className="h-full w-full object-cover" />
+              {previewImages.map((it, i) => (
+                <div key={it.url || i} className="relative h-16 w-16 overflow-hidden rounded bg-gray-100">
+                  <img src={it.url} alt={`img-${i}`} className="h-full w-full object-cover" />
+                  {it.kind === 'new' && (
+                    <button
+                      type="button"
+                      aria-label="Remove image"
+                      className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded bg-black/70 text-white"
+                      onClick={() => {
+                        setPreviewImages((cur) => (cur || []).filter((x) => x.url !== it.url));
+                        setImages((cur) => (cur || []).filter((x) => x.url !== it.url));
+                        try {
+                          if (it?.url && it.url.startsWith('blob:')) URL.revokeObjectURL(it.url);
+                        } catch (e) {}
+                      }}
+                    >
+                      ×
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
@@ -217,9 +237,9 @@ export default function EditAnimal({ animal, onUpdated, onDeleted, onCancel }) {
           <span>Add Images</span>
           <input type="file" multiple accept="image/*" onChange={(e) => {
             const files = Array.from(e.target.files || []);
-            setImages(files);
-            const fileUrls = files.map((f) => URL.createObjectURL(f));
-            setPreviewImages((prev) => [...(prev || []), ...fileUrls]);
+            const next = files.map((file) => ({ file, url: URL.createObjectURL(file) }));
+            setImages(next);
+            setPreviewImages((prev) => [...(prev || []), ...next.map((x) => ({ url: x.url, kind: 'new' }))]);
           }} />
         </label>
       </div>
