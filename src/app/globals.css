@@ -1,12 +1,8 @@
 @import "tailwindcss";
 
-:root {
-	--background: #ffffff;
-	--foreground: #0c0a09;
-}
+
 
 body {
-	color: var(--foreground);
 	font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system,
 		Segoe UI, Roboto, Arial, Helvetica, sans-serif;
 }
