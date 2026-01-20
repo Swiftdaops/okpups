@@ -4,10 +4,23 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { api } from '../../lib/api';
+import { formatCurrency } from '../../lib/formatCurrency';
 
 function ProductCard({ p }) {
+  const router = useRouter();
   return (
-    <div className="border rounded p-3">
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => router.push(`/products/${p._id}`)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          router.push(`/products/${p._id}`);
+        }
+      }}
+      className="border rounded p-3 cursor-pointer"
+    >
       <div className="h-40 bg-gray-100 rounded mb-3 flex items-center justify-center text-gray-400">
         {p.images && p.images[0] ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -18,9 +31,9 @@ function ProductCard({ p }) {
       </div>
       <h4 className="font-semibold">{p.name}</h4>
       <div className="text-sm text-gray-600">{p.brand}</div>
-      <div className="mt-2 flex items-center justify-between">
-        <div className="text-lg font-bold">₦{p.price}</div>
-        <Link href={`/products/${p._id}`} className="text-blue-600 text-sm">View</Link>
+        <div className="mt-2 flex items-center justify-between">
+        <div className="text-lg font-bold">{formatCurrency(p.price)}</div>
+        <Link onClick={(e) => e.stopPropagation()} href={`/products/${p._id}`} className="text-blue-600 text-sm">View</Link>
       </div>
     </div>
   );

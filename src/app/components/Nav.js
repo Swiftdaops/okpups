@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "../lib/api";
+import { formatCurrency } from "../lib/formatCurrency";
 
 export default function Nav() {
   return (
@@ -136,7 +137,7 @@ function SearchForm() {
                   <div className="font-medium">{r.name}</div>
                   <div className="text-xs text-gray-500">{r.type} • {r.extra}</div>
                 </div>
-                {r.price && <div className="text-sm font-medium">₦{r.price}</div>}
+                {r.price && <div className="text-sm font-medium">{formatCurrency(r.price)}</div>}
               </div>
             </a>
           ))}

@@ -6,6 +6,7 @@ import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { api } from "../../lib/api";
+import { formatCurrency } from "../../lib/formatCurrency";
 import { useCartPersistence, useCartStore } from "../../lib/useCart";
 
 function Badge({ children, color = "gray" }) {
@@ -30,6 +31,7 @@ export default function AnimalDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [mainImage, setMainImage] = useState(null);
+  const isUnoptimized = (src) => typeof src === 'string' && src.includes('placehold.co');
 
   useEffect(() => {
     if (!id) return;
@@ -73,7 +75,14 @@ export default function AnimalDetailsPage() {
         <div>
           <div className="relative mb-4 h-96 w-full overflow-hidden rounded-lg bg-gray-100 shadow-md">
             {mainImage && (
-              <Image src={mainImage} alt={animal.name || animal.breed || 'animal'} fill sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover" />
+              <Image
+                src={mainImage}
+                alt={animal.name || animal.breed || 'animal'}
+                fill
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                className="object-cover"
+                unoptimized={isUnoptimized(mainImage)}
+              />
             )}
           </div>
           <div className="flex gap-2">
@@ -90,6 +99,7 @@ export default function AnimalDetailsPage() {
                   fill
                   sizes="80px"
                   className="object-cover"
+                  unoptimized={isUnoptimized(img)}
                   onError={() => {
                     // remove broken image from thumbnails and if it was main, switch to next
                     setThumbnails((prev) => prev.filter((u) => u !== img));
@@ -115,7 +125,7 @@ export default function AnimalDetailsPage() {
             ))}
           </div>
 
-          <div className="mb-4 text-2xl font-bold text-blue-600">₦{Number(animal.price || 0).toLocaleString()}</div>
+          <div className="mb-4 text-2xl font-bold text-blue-600">{formatCurrency(animal.price)}</div>
           {animal.availabilityStatus && (
             <p className={`mb-4 ${animal.availabilityStatus !== 'available' ? 'text-red-500' : 'text-green-600'}`}>
               {String(animal.availabilityStatus).replace(/_/g,' ')}

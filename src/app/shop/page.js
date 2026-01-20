@@ -2,10 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import ShopHero from "./ShopHero";
 import { api } from "../lib/api";
 import { useCartStore, useCartPersistence } from "../lib/useCart";
+import { formatCurrency } from "../lib/formatCurrency";
 
 // real data will be fetched from backend
 
@@ -31,12 +33,24 @@ function Badge({ children, color = "gray" }) {
 // Animal Card
 // ----------------------------
 function AnimalCard({ a, onAdd }) {
+  const router = useRouter();
   const lowQty = Number(a.quantityAvailable || 0) > 0 && Number(a.quantityAvailable || 0) <= 3;
   const validImages = (a.images || []).filter(Boolean);
   const imgSrc = validImages.find((u) => (u || '').includes('cloudinary')) || validImages[0] || null;
   const placeholder = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400"><rect fill="%23f3f4f6" width="100%" height="100%"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%23888" font-size="20">No image</text></svg>';
   return (
-    <div className="group relative overflow-hidden rounded border hover:shadow-lg transition">
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => router.push(`/animals/${a._id}`)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          router.push(`/animals/${a._id}`);
+        }
+      }}
+      className="group relative cursor-pointer overflow-hidden rounded border hover:shadow-lg transition"
+    >
       <div className="w-full bg-gray-100">
         <div className="relative w-full pb-[100%] overflow-hidden">
           {imgSrc ? (
@@ -59,12 +73,20 @@ function AnimalCard({ a, onAdd }) {
         <div className="font-semibold">{a.name} • {a.breed}</div>
         <div className="text-sm text-gray-600">Age: {a.ageWeeks}w • Sex: {a.sex}</div>
         <div className="mt-2 flex items-center justify-between">
-          <div className="text-lg font-bold">₦{a.price.toLocaleString()}</div>
+          <div className="text-lg font-bold">{formatCurrency(a.price)}</div>
           {lowQty && <Badge color="red">Only {a.quantityAvailable} left!</Badge>}
         </div>
       </div>
       <div className="absolute inset-x-0 bottom-0 hidden items-center justify-between gap-2 bg-white/90 p-2 group-hover:flex">
-        <button onClick={() => onAdd(a)} className="rounded bg-black px-3 py-1 text-white">Add to Cart</button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onAdd(a);
+          }}
+          className="rounded bg-black px-3 py-1 text-white"
+        >
+          Add to Cart
+        </button>
         <Link href={`/animals/${a._id}`} className="rounded border px-3 py-1 text-sm">Quick View</Link>
       </div>
     </div>
@@ -75,12 +97,24 @@ function AnimalCard({ a, onAdd }) {
 // Product Card
 // ----------------------------
 function ProductCard({ p, onAdd }) {
+  const router = useRouter();
   const low = Number(p.stock || 0) > 0 && Number(p.stock || 0) <= 5;
   const validImages = (p.images || []).filter(Boolean);
   const imgSrc = validImages.find((u) => (u || '').includes('cloudinary')) || validImages[0] || null;
   const placeholder = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400"><rect fill="%23f3f4f6" width="100%" height="100%"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%23888" font-size="20">No image</text></svg>';
   return (
-    <div className="group relative overflow-hidden rounded border hover:shadow-lg transition">
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => router.push(`/products/${p._id}`)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          router.push(`/products/${p._id}`);
+        }
+      }}
+      className="group relative cursor-pointer overflow-hidden rounded border hover:shadow-lg transition"
+    >
       <div className="w-full bg-gray-100">
         <div className="relative w-full pb-[100%] overflow-hidden">
           {imgSrc ? (
@@ -104,12 +138,20 @@ function ProductCard({ p, onAdd }) {
         <div className="font-semibold">{p.name} • {p.brand}</div>
         <div className="text-sm text-gray-600">Stock: {p.stock} {low ? "(Low)" : ""}</div>
         <div className="mt-2 flex items-center justify-between">
-          <div className="text-lg font-bold">₦{p.price.toLocaleString()}</div>
+          <div className="text-lg font-bold">{formatCurrency(p.price)}</div>
           {low && <Badge color="red">Only {p.stock} left!</Badge>}
         </div>
       </div>
       <div className="absolute inset-x-0 bottom-0 hidden items-center justify-between gap-2 bg-white/90 p-2 group-hover:flex">
-        <button onClick={() => onAdd(p)} className="rounded bg-black px-3 py-1 text-white">Add to Cart</button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onAdd(p);
+          }}
+          className="rounded bg-black px-3 py-1 text-white"
+        >
+          Add to Cart
+        </button>
         <Link href={`/products/${p._id}`} className="rounded border px-3 py-1 text-sm">Quick View</Link>
       </div>
     </div>

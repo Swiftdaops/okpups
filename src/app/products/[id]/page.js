@@ -6,6 +6,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { api } from "../../lib/api";
+import { formatCurrency } from "../../lib/formatCurrency";
 import { useCartPersistence, useCartStore } from "../../lib/useCart";
 
 // 1. Updated Badge to use your Stone/Slate palette
@@ -31,6 +32,7 @@ export default function ProductDetailsPage() {
   const [error, setError] = useState(null);
   const [mainImage, setMainImage] = useState(null);
   const [thumbnails, setThumbnails] = useState([]);
+  const isUnoptimized = (src) => typeof src === 'string' && src.includes('placehold.co');
 
   useEffect(() => {
     if (!id) return;
@@ -82,6 +84,7 @@ export default function ProductDetailsPage() {
                 priority
                 sizes="(max-width: 1024px) 100vw, 50vw" 
                 className="object-cover" 
+                unoptimized={isUnoptimized(mainImage)}
               />
             )}
           </div>
@@ -94,7 +97,7 @@ export default function ProductDetailsPage() {
                 onClick={() => setMainImage(img)}
                 className={`relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-lg border-2 transition-colors ${mainImage === img ? 'border-stone-950' : 'border-slate-400'}`}
               >
-                <Image src={img} alt={`thumb-${idx}`} fill sizes="96px" className="object-cover" />
+                <Image src={img} alt={`thumb-${idx}`} fill sizes="96px" className="object-cover" unoptimized={isUnoptimized(img)} />
               </motion.button>
             ))}
           </div>
@@ -111,7 +114,7 @@ export default function ProductDetailsPage() {
           </div>
 
           <div className="mb-6 text-3xl font-bold">
-            ₦{Number(product.price || 0).toLocaleString()}
+            {formatCurrency(product.price)}
           </div>
 
           <div className={`mb-6 inline-flex items-center gap-2 font-medium ${product.stock > 0 ? 'text-emerald-700' : 'text-red-600'}`}>
