@@ -4,6 +4,19 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from "next/link";
 import { api, apiBase } from "../../lib/api";
+import { formatCurrency } from "../../lib/formatCurrency";
+
+function resolveCategory(categories, rawKey) {
+  const key = String(rawKey || '').trim().toLowerCase();
+  if (!key) return null;
+  const normalized = key.replace(/[^a-z0-9]+/g, '-');
+  const candidates = [normalized, normalized.endsWith('s') ? normalized.slice(0, -1) : `${normalized}s`];
+  return (
+    categories.find((c) => c?.slug && candidates.includes(String(c.slug).toLowerCase())) ||
+    categories.find((c) => c?.species && candidates.includes(String(c.species).toLowerCase())) ||
+    null
+  );
+}
 
 function getClientId() {
   try {
@@ -104,7 +117,7 @@ function AnimalCard({ a }) {
       <h4 className="font-semibold">{a.name || a.nameOrTag}</h4>
       <div className="text-sm text-gray-600">{a.species} {a.breed ? `• ${a.breed}` : ""}</div>
       <div className="mt-2 flex items-center justify-between">
-        <div className="text-lg font-bold">${a.price}</div>
+        <div className="text-lg font-bold">{formatCurrency(a.price || 0)}</div>
         <div className="flex items-center gap-2">
           <button
             onClick={(e) => {
@@ -136,10 +149,22 @@ function ShopAnimalsPageInner() {
   useEffect(() => { loadCategories(); }, []);
   useEffect(() => { loadAnimals(); }, [categorySlug, categories]);
 
+  // If we land on a deep-link like /shop/animals?category=dog, pick the matching category in the dropdown
+  useEffect(() => {
+    if (!categorySlug) return;
+    if (!categories.length) return;
+    if (categoryId) return;
+    const found = resolveCategory(categories, categorySlug);
+    if (found?._id) setCategoryId(found._id);
+  }, [categorySlug, categories, categoryId]);
+
   async function loadCategories() {
     try {
       const d = await api.get("/categories");
-      setCategories((d.categories || []).filter((c) => c.type === 'animal'));
+      // backend uses: type = 'pet' | 'livestock' | 'product'
+      const all = (d.categories || []).filter((c) => c && c.type !== 'product');
+      all.sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
+      setCategories(all);
     } catch (e) {
       // ignore
     }
@@ -152,7 +177,7 @@ function ShopAnimalsPageInner() {
       let q = opts.categoryId || categoryId;
       // if no explicit category id but a category slug was supplied via query string, try to resolve it
       if (!q && categorySlug) {
-        const found = categories.find((c) => c.slug === categorySlug);
+        const found = resolveCategory(categories, categorySlug);
         if (found) q = found._id;
       }
       // prefer categoryId when available; otherwise if categorySlug exists, use species-style query
