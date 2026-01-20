@@ -94,7 +94,8 @@ export default function HomeHero() {
   const handleQuickLink = (link) => {
     const qs = new URLSearchParams();
     if (link.category) qs.set('category', link.category);
-    if (link.species) qs.set('species', link.species);
+    // backend/shop pages expect `category` as the query key for species/category filtering
+    if (link.species) qs.set('category', link.species);
     const params = qs.toString();
     const pushPath = `/shop/${link.type}${params ? `?${params}` : ''}`;
     router.push(pushPath);

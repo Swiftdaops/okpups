@@ -37,6 +37,7 @@ export default function EditAnimal({ animal, onUpdated, onDeleted, onCancel }) {
   }));
   const [images, setImages] = useState([]); // [{ file, url }]
   const [previewImages, setPreviewImages] = useState(() => (animal.images || []).map((url) => ({ url, kind: 'existing' })));
+  const [removedExisting, setRemovedExisting] = useState([]);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
 
@@ -103,6 +104,8 @@ export default function EditAnimal({ animal, onUpdated, onDeleted, onCancel }) {
         fd.append(k, JSON.stringify(v));
       }
       (images || []).forEach((it) => fd.append("images", it.file));
+      // include any existing images the user removed
+      (removedExisting || []).forEach((url) => fd.append('removeImages[]', url));
       const data = await apiForm(`/animals/admin/${animal._id}`, fd, "PATCH");
       onUpdated?.(data.animal);
     } catch (e) {
@@ -216,7 +219,7 @@ export default function EditAnimal({ animal, onUpdated, onDeleted, onCancel }) {
                     <button
                       type="button"
                       aria-label="Remove image"
-                      className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded bg-black/70 text-white"
+                      className="absolute right-1 top-1 z-20 grid h-6 w-6 place-items-center rounded-full bg-red-600 text-white text-sm shadow-lg hover:bg-red-700"
                       onClick={() => {
                         setPreviewImages((cur) => (cur || []).filter((x) => x.url !== it.url));
                         setImages((cur) => (cur || []).filter((x) => x.url !== it.url));
@@ -226,6 +229,20 @@ export default function EditAnimal({ animal, onUpdated, onDeleted, onCancel }) {
                       }}
                     >
                       ×
+                    </button>
+                  )}
+                  {it.kind === 'existing' && (
+                    <button
+                      type="button"
+                      aria-label="Remove existing image"
+                      className="absolute left-1 top-1 z-20 grid h-6 w-6 place-items-center rounded-full bg-red-600 text-white text-sm shadow-lg hover:bg-red-700"
+                      onClick={() => {
+                        // mark existing image for removal
+                        setPreviewImages((cur) => (cur || []).filter((x) => x.url !== it.url));
+                        setRemovedExisting((cur) => [...(cur || []), it.url]);
+                      }}
+                    >
+                      🗑
                     </button>
                   )}
                 </div>

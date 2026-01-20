@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from "next/link";
 import { api, apiBase } from "../../lib/api";
 
@@ -37,6 +38,7 @@ function setLocalLiked(id) {
 }
 
 function AnimalCard({ a }) {
+  const router = useRouter();
   const validImages = (a.images || []).filter(Boolean);
   const img = validImages.find((u) => (u || "").includes("cloudinary")) || validImages[0] || null;
   const [likes, setLikes] = useState(0);
@@ -75,7 +77,18 @@ function AnimalCard({ a }) {
   }
 
   return (
-    <div className="border rounded p-3">
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => router.push(`/animals/${a._id}`)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          router.push(`/animals/${a._id}`);
+        }
+      }}
+      className="border rounded p-3 cursor-pointer"
+    >
       {img ? (
         <div className="h-40 mb-3 overflow-hidden rounded bg-gray-100">
           <img
@@ -93,10 +106,18 @@ function AnimalCard({ a }) {
       <div className="mt-2 flex items-center justify-between">
         <div className="text-lg font-bold">${a.price}</div>
         <div className="flex items-center gap-2">
-          <button onClick={handleLike} className={`rounded px-2 py-1 text-sm ${liked ? 'bg-red-500 text-white' : 'border'}`}>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleLike();
+            }}
+            className={`rounded px-2 py-1 text-sm ${liked ? 'bg-red-500 text-white' : 'border'}`}
+          >
             ❤️ {likes}
           </button>
-          <Link href={`/animals/${a._id}`} className="text-blue-600 text-sm">View</Link>
+          <Link onClick={(e) => e.stopPropagation()} href={`/animals/${a._id}`} className="text-blue-600 text-sm">
+            View
+          </Link>
         </div>
       </div>
     </div>
@@ -104,13 +125,16 @@ function AnimalCard({ a }) {
 }
 
 export default function ShopAnimalsPage() {
+  const searchParams = useSearchParams();
+  const categorySlug = (searchParams && (searchParams.get('category') || searchParams.get('species'))) || null;
   const [categories, setCategories] = useState([]);
   const [animals, setAnimals] = useState([]);
   const [categoryId, setCategoryId] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  useEffect(() => { loadCategories(); loadAnimals(); }, []);
+  useEffect(() => { loadCategories(); }, []);
+  useEffect(() => { loadAnimals(); }, [categorySlug, categories]);
 
   async function loadCategories() {
     try {
@@ -125,8 +149,14 @@ export default function ShopAnimalsPage() {
     setLoading(true);
     setError(null);
     try {
-      const q = opts.categoryId || categoryId;
-      const path = q ? `/animals?categoryId=${q}` : "/animals";
+      let q = opts.categoryId || categoryId;
+      // if no explicit category id but a category slug was supplied via query string, try to resolve it
+      if (!q && categorySlug) {
+        const found = categories.find((c) => c.slug === categorySlug);
+        if (found) q = found._id;
+      }
+      // prefer categoryId when available; otherwise if categorySlug exists, use species-style query
+      const path = q ? `/animals?categoryId=${q}` : (categorySlug ? `/animals?category=${encodeURIComponent(categorySlug)}` : "/animals");
       const d = await api.get(path);
       setAnimals(d.animals || []);
     } catch (e) {

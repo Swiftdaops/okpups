@@ -236,9 +236,9 @@ export default function ShopPage() {
           className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
         >
           {visible.map(item => tab==="animals" ? (
-            <AnimalCard key={item._id} a={item} onAdd={(a)=>addItem({_id:a._id,name:a.name,price:a.price})} />
+            <AnimalCard key={item._id} a={item} onAdd={(a)=>addItem({_id:a._id,_type:'animal',name:a.name,price:a.price,qty:1})} />
           ) : (
-            <ProductCard key={item._id} p={item} onAdd={(p)=>addItem({_id:p._id,name:p.name,price:p.price})} />
+            <ProductCard key={item._id} p={item} onAdd={(p)=>addItem({_id:p._id,_type:'product',name:p.name,price:p.price,qty:1})} />
           ))}
         </motion.div>
       </AnimatePresence>

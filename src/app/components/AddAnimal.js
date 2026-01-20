@@ -212,7 +212,7 @@ export default function AddAnimal({ onCreated, onCancel }) {
                   <button
                     type="button"
                     aria-label="Remove image"
-                    className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded bg-black/70 text-white"
+                    className="absolute right-1 top-1 z-20 grid h-6 w-6 place-items-center rounded-full bg-red-600 text-white text-sm shadow-lg hover:bg-red-700"
                     onClick={() => {
                       setImages((cur) => {
                         const next = (cur || []).filter((x) => x.url !== it.url);

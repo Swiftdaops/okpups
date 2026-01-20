@@ -27,7 +27,16 @@ export default function AdminAnimalsPage() {
   useEffect(() => {
     api
       .get("/categories")
-      .then((d) => setCategories((d.categories || []).filter((c) => c?.type !== "product")))
+      .then((d) => {
+        const excludeKeywords = ['livestock', 'poultry', 'farm', 'companion'];
+        const cats = (d.categories || []).filter((c) => {
+          if (!c) return false;
+          if (c.type === 'product') return false;
+          const name = String(c.name || '').toLowerCase();
+          return !excludeKeywords.some((k) => name.includes(k));
+        });
+        setCategories(cats);
+      })
       .catch(() => setCategories([]));
   }, []);
 
