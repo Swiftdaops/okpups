@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from "next/link";
 import { api, apiBase } from "../../lib/api";
@@ -124,7 +124,7 @@ function AnimalCard({ a }) {
   );
 }
 
-export default function ShopAnimalsPage() {
+function ShopAnimalsPageInner() {
   const searchParams = useSearchParams();
   const categorySlug = (searchParams && (searchParams.get('category') || searchParams.get('species'))) || null;
   const [categories, setCategories] = useState([]);
@@ -195,5 +195,13 @@ export default function ShopAnimalsPage() {
         <Link href="/shop" className="text-blue-600">Back to Shop</Link>
       </div>
     </main>
+  );
+}
+
+export default function ShopAnimalsPage() {
+  return (
+    <Suspense fallback={<main className="max-w-6xl mx-auto p-6" />}> 
+      <ShopAnimalsPageInner />
+    </Suspense>
   );
 }
