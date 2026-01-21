@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import ShopHero from "./ShopHero";
 import { api } from "../lib/api";
@@ -161,52 +161,105 @@ function ProductCard({ p, onAdd }) {
 // ----------------------------
 // Shop Page Component
 // ----------------------------
-export default function ShopPage() {
+function resolveCategory(categories, rawKey) {
+  const key = String(rawKey || '').trim().toLowerCase();
+  if (!key) return null;
+  const normalized = key.replace(/[^a-z0-9]+/g, '-');
+  const candidates = [normalized, normalized.endsWith('s') ? normalized.slice(0, -1) : `${normalized}s`];
+  return (
+    (categories || []).find((c) => c?.slug && candidates.includes(String(c.slug).toLowerCase())) ||
+    (categories || []).find((c) => c?.species && candidates.includes(String(c.species).toLowerCase())) ||
+    null
+  );
+}
+
+function ShopPageInner() {
+  const searchParams = useSearchParams();
+
   const [tab, setTab] = useState("animals"); // animals | products
   const [visibleCount, setVisibleCount] = useState(6);
   const [filterQuery, setFilterQuery] = useState("");
+  const [categoryKey, setCategoryKey] = useState("");
 
   const addItem = useCartStore((s) => s.addItem);
   useCartPersistence();
 
   const [animals, setAnimals] = useState([]);
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     let mounted = true;
     setLoading(true); setError(null);
-    Promise.all([api.get('/animals'), api.get('/products')])
-      .then(([aRes, pRes]) => {
+    Promise.all([api.get('/animals'), api.get('/products'), api.get('/categories')])
+      .then(([aRes, pRes, cRes]) => {
         if (!mounted) return;
         setAnimals(aRes.animals || []);
         setProducts(pRes.products || []);
+        setCategories(cRes.categories || []);
       })
       .catch((e) => { if (mounted) setError(e.message || 'Failed to load'); })
       .finally(() => { if (mounted) setLoading(false); });
     return () => { mounted = false; };
   }, []);
 
+  // Sync state from URL so Home buttons control /shop
+  useEffect(() => {
+    const nextTab = (searchParams?.get('tab') || '').toLowerCase();
+    const nextCategory = (searchParams?.get('category') || '').toLowerCase();
+    const nextSearch = (searchParams?.get('search') || '').toLowerCase();
+
+    if (nextTab === 'animals' || nextTab === 'products') setTab(nextTab);
+    if (typeof nextCategory === 'string') setCategoryKey(nextCategory);
+    if (typeof nextSearch === 'string') setFilterQuery(nextSearch);
+    setVisibleCount(6);
+  }, [searchParams]);
+
   const filteredAnimals = useMemo(() => {
     const q = (filterQuery || "").toLowerCase().trim();
-    if (!q) return (animals || []);
+    const key = (categoryKey || '').toLowerCase().trim();
+
+    let list = (animals || []);
+    if (key) {
+      const nonProductCategories = (categories || []).filter((c) => c && c.type !== 'product');
+      const found = resolveCategory(nonProductCategories, key);
+      if (found?._id) {
+        list = list.filter((a) => String(a.categoryId || '') === String(found._id));
+      } else {
+        list = list.filter((a) => String(a.species || '').toLowerCase() === key);
+      }
+    }
+
+    if (!q) return list;
     return (animals || []).filter((a) => {
       const hay = [a.name, a.breed, a.species, (a.purpose || []).join(" "), (a.temperament || []).join(" ")]
         .filter(Boolean).join(" ").toLowerCase();
       return hay.includes(q) || q === "puppies" && (a.ageWeeks && a.ageWeeks <= 16);
     });
-  }, [animals, filterQuery]);
+  }, [animals, categories, categoryKey, filterQuery]);
 
   const filteredProducts = useMemo(() => {
     const q = (filterQuery || "").toLowerCase().trim();
-    if (!q) return (products || []);
+    const key = (categoryKey || '').toLowerCase().trim();
+
+    let list = (products || []);
+    if (key) {
+      const productCategories = (categories || []).filter((c) => c && c.type === 'product');
+      const found = resolveCategory(productCategories, key);
+      if (found?._id) {
+        list = list.filter((p) => String(p.categoryId || '') === String(found._id));
+      }
+    }
+
+    if (!q) return list;
     return (products || []).filter((p) => {
       const hay = [p.name, p.brand, (p.purpose || []).join(" "), (p.ageSuitability || []).join(" ")]
         .filter(Boolean).join(" ").toLowerCase();
       return hay.includes(q) || q === "products";
     });
-  }, [products, filterQuery]);
+  }, [products, categories, categoryKey, filterQuery]);
 
   const showList = tab === "animals" ? filteredAnimals : filteredProducts;
   const visible = showList.slice(0, visibleCount);
@@ -228,7 +281,7 @@ export default function ShopPage() {
       {/* Grid with smooth transitions */}
       <AnimatePresence mode="wait">
         <motion.div
-          key={`${tab}-${filterQuery}`}
+          key={`${tab}-${categoryKey}-${filterQuery}`}
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -8 }}
@@ -252,5 +305,13 @@ export default function ShopPage() {
         </div>
       )}
     </main>
+  );
+}
+
+export default function ShopPage() {
+  return (
+    <Suspense fallback={<main className="max-w-7xl mx-auto" />}>
+      <ShopPageInner />
+    </Suspense>
   );
 }

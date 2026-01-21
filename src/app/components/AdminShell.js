@@ -77,6 +77,7 @@ export default function AdminShell({ onLogout }) {
             <Link href="/admin/dashboard" className="rounded px-2 py-1 hover:bg-gray-100">Dashboard</Link>
             <Link href="/admin/animals" className="rounded px-2 py-1 hover:bg-gray-100">Animals</Link>
             <Link href="/admin/products" className="rounded px-2 py-1 hover:bg-gray-100">Products</Link>
+            <Link href="/admin/orders" className="rounded px-2 py-1 hover:bg-gray-100">Orders</Link>
           </nav>
         </aside>
       </div>

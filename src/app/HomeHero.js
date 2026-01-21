@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { api } from "./lib/api";
+import { SHOP_QUICK_FILTERS, buildShopHref } from "./lib/shopQuickFilters";
 
 export default function HomeHero() {
   const router = useRouter();
@@ -20,7 +21,7 @@ export default function HomeHero() {
     if (!query.trim()) return;
     // navigate immediately and prefetch search results in background
     const q = query.trim();
-    router.push(`/shop?search=${encodeURIComponent(q)}`);
+    router.push(buildShopHref({ search: q }));
     api.get(`/animals?q=${encodeURIComponent(q)}`).catch(() => null);
     api.get(`/products?q=${encodeURIComponent(q)}`).catch(() => null);
   };
@@ -83,25 +84,8 @@ export default function HomeHero() {
     else router.push(`/products/${s.id}`);
   };
 
-  const quickLinks = [
-    { label: "Dog Food", type: "products", category: "dog-food" },
-    { label: "Cat Food", type: "products", category: "cat-food" },
-    { label: "Livestock Feed", type: "products", category: "livestock-feed" },
-    { label: "Puppies", type: "animals", species: "dog" },
-    { label: "Kittens", type: "animals", species: "cat" }
-  ];
-
   const handleQuickLink = (link) => {
-    const qs = new URLSearchParams();
-    if (link.category) qs.set('category', link.category);
-    // backend/shop pages expect `category` as the query key for species/category filtering
-    if (link.species) qs.set('category', link.species);
-    const params = qs.toString();
-    const pushPath = `/shop/${link.type}${params ? `?${params}` : ''}`;
-    router.push(pushPath);
-    // warm cache
-    const url = `/${link.type === 'products' ? 'products' : 'animals'}${params ? `?${params}` : ''}`;
-    api.get(url).catch(() => null);
+    router.push(buildShopHref({ tab: link.tab, category: link.category }));
   };
 
   return (
@@ -181,7 +165,7 @@ export default function HomeHero() {
           animate={{ opacity: 1 }}
           transition={{ delay: 1.2 }}
         >
-          {quickLinks.map((link) => (
+          {SHOP_QUICK_FILTERS.map((link) => (
             <button
               key={link.label}
               onClick={() => handleQuickLink(link)}

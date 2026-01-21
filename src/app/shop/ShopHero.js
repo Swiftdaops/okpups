@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { SHOP_QUICK_FILTERS, buildShopHref } from "../lib/shopQuickFilters";
 
 export default function ShopHero({ onSearch }) {
   const [query, setQuery] = useState("");
@@ -55,21 +56,21 @@ export default function ShopHero({ onSearch }) {
           </button>
         </motion.form>
 
-        {/* Quick Category Buttons (call onSearch) */}
+        {/* Quick Category Buttons (same as Home) */}
         <motion.div
           className="mt-6 flex flex-wrap justify-center gap-3"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1.2 }}
         >
-          {["Puppies", "Kittens", "Livestock", "Poultry", "Products"].map((cat) => (
-            <button
-              key={cat}
-              onClick={() => onSearch && onSearch(cat.toLowerCase())}
+          {SHOP_QUICK_FILTERS.map((f) => (
+            <Link
+              key={f.label}
+              href={buildShopHref({ tab: f.tab, category: f.category })}
               className="px-4 py-2 bg-white rounded shadow hover:bg-blue-50 transition text-gray-800 font-medium"
             >
-              {cat}
-            </button>
+              {f.label}
+            </Link>
           ))}
         </motion.div>
       </div>

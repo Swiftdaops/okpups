@@ -32,7 +32,7 @@ export default function RootLayout({ children }) {
         <Nav />
         <main className="min-h-screen">{children}</main>
         <Footer />
-        <Analytics />
+        {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>
   );
