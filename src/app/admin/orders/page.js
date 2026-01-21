@@ -32,9 +32,6 @@ export default function AdminOrdersPage() {
     }
   }
 
-  if (loading) return <div className="p-6">Loading...</div>;
-  if (!admin) return null;
-
   const filtered = useMemo(() => {
     const q = String(query || "").trim().toLowerCase();
     let list = orders || [];
@@ -57,6 +54,9 @@ export default function AdminOrdersPage() {
       return new Date(b.createdAt) - new Date(a.createdAt);
     });
   }, [orders, query]);
+
+  if (loading) return <div className="p-6">Loading...</div>;
+  if (!admin) return null;
 
   return (
     <div className="mx-auto max-w-6xl p-6">
