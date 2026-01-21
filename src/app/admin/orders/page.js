@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { api } from "../../lib/api";
 import { useRequireAdmin } from "../../lib/useRequireAdmin";
 import {
@@ -18,6 +18,7 @@ export default function AdminOrdersPage() {
   const [orders, setOrders] = useState([]);
   const [error, setError] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [query, setQuery] = useState("");
 
   useEffect(() => { if (!loading) load(); }, [loading]);
 
@@ -34,17 +35,51 @@ export default function AdminOrdersPage() {
   if (loading) return <div className="p-6">Loading...</div>;
   if (!admin) return null;
 
+  const filtered = useMemo(() => {
+    const q = String(query || "").trim().toLowerCase();
+    let list = orders || [];
+    if (q) {
+      list = list.filter((o) => {
+        return (
+          (o.customerName || "").toLowerCase().includes(q) ||
+          (o.cid || "").toLowerCase().includes(q) ||
+          (o.customerWhatsApp || "").toLowerCase().includes(q) ||
+          (o._id || "").toLowerCase().includes(q)
+        );
+      });
+    }
+    // Group/sort: put same `cid` together, then newest first
+    return list.slice().sort((a, b) => {
+      const ca = (a.cid || "").toString();
+      const cb = (b.cid || "").toString();
+      if (ca < cb) return -1;
+      if (ca > cb) return 1;
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+  }, [orders, query]);
+
   return (
     <div className="mx-auto max-w-6xl p-6">
       <h1 className="text-xl font-semibold mb-4">Orders</h1>
       {error && <div className="mb-2 text-sm text-red-600">{error}</div>}
 
+      <div className="mb-4 flex items-center gap-3">
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search by name, cid, phone or order id"
+          className="w-full max-w-md rounded border px-3 py-2"
+          aria-label="Search orders"
+        />
+        <button onClick={() => setQuery("")} className="rounded border px-3 py-2">Clear</button>
+      </div>
+
       {/* Share modal */}
       <ShareOrderModal open={!!selectedOrder} onClose={() => setSelectedOrder(null)} order={selectedOrder} />
 
       <div className="mt-4">
-        {orders.length === 0 ? (
-          <div className="p-6 text-gray-600">No orders yet.</div>
+        {filtered.length === 0 ? (
+          <div className="p-6 text-gray-600">No orders found.</div>
         ) : (
           <>
             {/* Desktop / tablet table */}
@@ -61,7 +96,7 @@ export default function AdminOrdersPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {orders.map((o) => (
+                  {filtered.map((o) => (
                     <TableRow key={o._id}>
                       <TableCell>{new Date(o.createdAt).toLocaleString()}</TableCell>
                       <TableCell>
@@ -87,7 +122,7 @@ export default function AdminOrdersPage() {
 
             {/* Mobile stacked cards */}
             <div className="md:hidden grid gap-4">
-              {orders.map((o) => (
+              {filtered.map((o) => (
                 <div key={o._id} className="rounded border p-4">
                   <div className="flex items-center justify-between">
                     <div>
@@ -98,7 +133,7 @@ export default function AdminOrdersPage() {
                     </div>
                   </div>
 
-                  <div className="mt-3 text-sm">
+                    <div className="mt-3 text-sm">
                     {o.items && o.items.map((it, i) => (
                       <div key={i} className="border-t pt-2 mt-2">
                         <div className="font-medium">{it.name}</div>
