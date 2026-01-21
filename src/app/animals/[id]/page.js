@@ -79,6 +79,7 @@ export default function AnimalDetailsPage() {
                 src={mainImage}
                 alt={animal.name || animal.breed || 'animal'}
                 fill
+                loading="eager"
                 sizes="(max-width: 1024px) 100vw, 50vw"
                 className="object-cover"
                 unoptimized={isUnoptimized(mainImage)}
